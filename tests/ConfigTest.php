@@ -200,6 +200,24 @@ class ConfigTest extends TestCase
         $this->assertFalse($config->onDedicated());
     }
 
+    public function test_onproduction_prod_is_true() : void
+    {
+        $env = $this->mockEnvironmentDeploy;
+        $env['PLATFORM_ENVIRONMENT_TYPE'] = 'production';
+        $config = new Config($env);
+
+        $this->assertTrue($config->onProduction());
+    }
+
+    public function test_onproduction_stg_is_false() : void
+    {
+        $env = $this->mockEnvironmentDeploy;
+        $env['PLATFORM_ENVIRONMENT_TYPE'] = 'staging';
+        $config = new Config($env);
+
+        $this->assertFalse($config->onProduction());
+    }
+
     public function test_onproduction_on_dedicated_prod_is_true() : void
     {
         $env = $this->mockEnvironmentDeploy;

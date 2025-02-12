@@ -35,6 +35,8 @@ namespace Platformsh\ConfigReader;
  *   The Git branch name.
  * @property-read string $environment
  *   The environment ID (usually the Git branch plus a hash).
+ * @property-read string $environmentType
+ *   The environmentType (prod, staging, dev)
  * @property-read string $documentRoot
  *   The absolute path to the web root of the application.
  * @property-read string $smtpHost
@@ -76,6 +78,7 @@ class Config
     protected $directVariablesRuntime = [
         'branch' => 'BRANCH',
         'environment' => 'ENVIRONMENT',
+        'environmentType' => 'ENVIRONMENT_TYPE',
         'documentRoot' => 'DOCUMENT_ROOT',
         'smtpHost' => 'SMTP_HOST',
     ];
@@ -437,9 +440,16 @@ class Config
             return false;
         }
 
-        $prodBranch = $this->onDedicated() ? 'production' : 'master';
-
-        return $this->getValue('BRANCH') == $prodBranch;
+        // we need to first confirm that we actually have the `ENVIRONMENT_TYPE` variable, 
+        // because not all legacy containers will have this
+        if($this->hasVariable('ENVIRONMENT_TYPE')) {
+            // correct way of checking production branch
+            return $this->getValue('ENVIRONMENT_TYPE') == 'production';
+        } else {
+            // legacy way of checking production type
+            $prodBranch = $this->onDedicated() ? 'production' : 'master';
+            return $this->getValue('BRANCH') == $prodBranch;
+        }
     }
 
     /**
@@ -498,6 +508,19 @@ class Config
         return isset($this->relationshipsDef[$relationship]);
     }
 
+    /**
+     * Check if an environment variable exists, useful for backwards compatibility checks
+     *
+     * @param string $name
+     *   The env variable to check.
+     * @return bool
+     */
+    protected function hasVariable(string $name) :?bool
+    {
+        $checkName = $this->envPrefix . strtoupper($name);
+
+        return array_key_exists($checkName, $this->environmentVariables);
+    }
     /**
      * Reads an environment variable, taking the prefix into account.
      *
